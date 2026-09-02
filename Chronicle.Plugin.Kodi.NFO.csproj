@@ -14,7 +14,7 @@
     <!-- Local path reference during development, same convention as every other Chronicle
          plugin repo (sibling directory layout). Replace with a NuGet package reference once
          Chronicle.Plugins is published. Pulls in Chronicle.Core transitively (Chronicle.Plugins
-         itself references it) -- that's where XmlToJsonConverter, the one genuinely
+         itself references it): that's where XmlToJsonConverter, the one genuinely
          format-agnostic piece of the old NFO code, stayed. -->
     <ProjectReference Include="..\Chronicle\src\Chronicle.Plugins\Chronicle.Plugins.csproj"
                       Private="false"
