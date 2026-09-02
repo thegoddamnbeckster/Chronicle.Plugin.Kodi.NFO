@@ -86,6 +86,20 @@ public class KodiNfoReaderTests
         KodiNfoReader.ParseSignalXml("<movie><title>Unclosed").Should().BeNull();
     }
 
+    [Fact]
+    public void ParseSignalXml_MusicNfo_ExtractsArtistAndAlbum()
+    {
+        // ScanGroupingService's own level-0 (Artist)/level-1 (Album) grouping reads exactly
+        // these two fields -- dropped in an earlier draft of this port and caught before
+        // Chronicle's core was wired to depend on this plugin.
+        const string xml = "<album><title>The Black Album</title><artist>Metallica</artist><album>The Black Album</album></album>";
+
+        var signal = KodiNfoReader.ParseSignalXml(xml);
+
+        signal!.Artist.Should().Be("Metallica");
+        signal.Album.Should().Be("The Black Album");
+    }
+
     // ── CaptureLossless ──────────────────────────────────────────────────────
 
     [Fact]

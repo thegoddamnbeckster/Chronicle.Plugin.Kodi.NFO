@@ -94,7 +94,9 @@ internal static class KodiNfoReader
                 Episode: GetInt("episode"),
                 ShowTitle: Get("showtitle"),
                 ExternalId: externalId,
-                PosterUrl: Get("thumb"));
+                PosterUrl: Get("thumb"),
+                Artist: Get("artist"),
+                Album: Get("album"));
         }
         catch { return null; }
     }
