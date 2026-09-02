@@ -1,0 +1,12 @@
+{
+  "plugin_id": "chronicle.plugin.kodi.nfo",
+  "name": "Kodi NFO",
+  "version": "1.0.0",
+  "author": "Chronicle Contributors",
+  "description": "Reads and writes Kodi's .nfo sidecar files -- lossless local capture during a file scan, and building fresh NFOs from Chronicle's own resolved data on demand for Chronicle_Scraper's movie and TV addons.",
+  "min_chronicle_version": "0.7.0",
+  "entry_type": "Chronicle.Plugin.Kodi.NFO.KodiNfoPlugin",
+  "iconUrl": "https://kodi.tv/favicon.ico",
+  "brandColorLight": "#1B75BC",
+  "brandColorDark": "#4FA3E3"
+}
