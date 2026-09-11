@@ -55,6 +55,43 @@ public class KodiNfoReaderTests
         finally { dir.Delete(recursive: true); }
     }
 
+    [Fact]
+    public void FindSidecar_ExactlyOneOtherNfo_FallsBackToIt()
+    {
+        // Single-release folder (e.g. a movie whose NFO is named differently from its
+        // video file) -- the one case the "any other .nfo" fallback is meant for.
+        var dir = Directory.CreateTempSubdirectory("kodi_nfo_reader_test_");
+        try
+        {
+            var videoPath = Path.Combine(dir.FullName, "release-name.mkv");
+            var onlyNfo    = Path.Combine(dir.FullName, "movie.nfo");
+            File.WriteAllText(videoPath, "");
+            File.WriteAllText(onlyNfo, "<movie><title>Movie</title></movie>");
+
+            KodiNfoReader.FindSidecar(videoPath).Should().Be(onlyNfo);
+        }
+        finally { dir.Delete(recursive: true); }
+    }
+
+    [Fact]
+    public void FindSidecar_MultipleOtherNfosInFolder_ReturnsNullInsteadOfGuessing()
+    {
+        // TV season folder: several episodes each with their own NFO. A new episode with
+        // no NFO of its own must NOT inherit a sibling episode's NFO -- confirmed root cause
+        // (2026-09-10) of a new episode silently taking on an earlier episode's title.
+        var dir = Directory.CreateTempSubdirectory("kodi_nfo_reader_test_");
+        try
+        {
+            var newEpisode = Path.Combine(dir.FullName, "Show - S01E03.mkv");
+            File.WriteAllText(newEpisode, "");
+            File.WriteAllText(Path.Combine(dir.FullName, "Show - S01E01.nfo"), "<episodedetails><title>Ep1</title></episodedetails>");
+            File.WriteAllText(Path.Combine(dir.FullName, "Show - S01E02.nfo"), "<episodedetails><title>Ep2</title></episodedetails>");
+
+            KodiNfoReader.FindSidecar(newEpisode).Should().BeNull();
+        }
+        finally { dir.Delete(recursive: true); }
+    }
+
     // ── ExtractSignal ────────────────────────────────────────────────────────
 
     [Fact]

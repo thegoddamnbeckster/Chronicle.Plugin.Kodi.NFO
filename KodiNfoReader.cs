@@ -46,13 +46,22 @@ internal static class KodiNfoReader
         var adjacent = Path.Combine(dir, stem + ".nfo");
         if (File.Exists(adjacent)) return adjacent;
 
-        // Fall back to any OTHER .nfo in the same folder (e.g. a movie's own NFO named
+        // Fall back to the OTHER .nfo in the same folder (e.g. a movie's own NFO named
         // differently from its video file) -- but never a season/show NFO, which describes
-        // the whole folder, not this one file.
+        // the whole folder, not this one file. Only safe when EXACTLY ONE candidate exists:
+        // that's true for a movie's own folder (one release, one NFO), but a TV season folder
+        // holds one NFO per episode alongside the video files, so picking the first match
+        // there is a guess, not a match. Confirmed root cause (2026-09-10): a new episode with
+        // no NFO of its own picked up whichever sibling episode's NFO enumerated first, silently
+        // inheriting that episode's title -- ambiguous is worse than nothing here, so return
+        // null instead of guessing.
         try
         {
-            return Directory.EnumerateFiles(dir, "*.nfo")
-                .FirstOrDefault(f => !SeasonOrShowNfo.IsMatch(Path.GetFileName(f)));
+            var candidates = Directory.EnumerateFiles(dir, "*.nfo")
+                .Where(f => !SeasonOrShowNfo.IsMatch(Path.GetFileName(f)))
+                .Take(2)
+                .ToList();
+            return candidates.Count == 1 ? candidates[0] : null;
         }
         catch { return null; }
     }
