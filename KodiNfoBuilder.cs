@@ -259,12 +259,29 @@ internal static class KodiNfoBuilder
             if (!artwork.TryGetValue(artType, out var candidates) || candidates is not { Count: > 0 })
                 continue;
 
-            if (artType == "fanart")
+            // Kodi's own "Choose Art" dialog only ever offers alternates for a slot when the
+            // NFO itself lists more than one -- a bare "<poster>url</poster>" gives Kodi
+            // nothing to pick between. <fanart> has always used the wrapped
+            // "<fanart><thumb>url</thumb>...</fanart>" form (even for a single candidate), so
+            // Kodi's fanart picker already sees every image Chronicle knows about. Every other
+            // slot used to write ONLY its single top candidate as a bare tag -- Chronicle's own
+            // resolved pick -- so Kodi's poster/clearlogo/banner/etc. picker only ever had that
+            // one option, with no way to browse Chronicle's other candidates from inside Kodi
+            // at all. Confirmed live (2026-09-12): switching posters inside Kodi for "Spider-Man:
+            // Brand New Day" offered nothing but a blank slot and an auto-generated video still,
+            // never any of the real posters Chronicle already had resolved for it.
+            //
+            // Any slot with more than one candidate now gets the same wrapped form as fanart,
+            // so Kodi's picker for every slot can offer every image Chronicle has -- not just
+            // the one it already chose. A single-candidate slot keeps writing the bare tag
+            // (matches Kodi's own scraper output for that case, and there's no alternate to
+            // offer anyway).
+            if (artType == "fanart" || candidates.Count > 1)
             {
-                var fanartEl = new XElement("fanart");
+                var containerEl = new XElement(artType == "fanart" ? "fanart" : tag);
                 foreach (var candidate in candidates)
-                    AddText(fanartEl, "thumb", candidate.Url);
-                artEl.Add(fanartEl);
+                    AddText(containerEl, "thumb", candidate.Url);
+                artEl.Add(containerEl);
             }
             else
             {

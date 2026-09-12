@@ -180,6 +180,75 @@ public class KodiNfoBuilderTests
         curated!.Value.GetProperty("premiered").GetString().Should().Be("2020-05-01");
     }
 
+    [Fact]
+    public void Build_SinglePosterCandidate_WritesABareTag()
+    {
+        var data = MinimalMovie() with
+        {
+            Artwork = new Dictionary<string, List<ResolvedArtworkCandidate>>
+            {
+                ["poster"] = [new ResolvedArtworkCandidate("https://example.com/poster.jpg", "tmdb")],
+            },
+        };
+
+        var root = Parse(KodiNfoBuilder.Build(new MovieSidecarBuildRequest(data)));
+
+        var posterEl = root.Element("art")!.Element("poster")!;
+        posterEl.HasElements.Should().BeFalse();
+        posterEl.Value.Should().Be("https://example.com/poster.jpg");
+    }
+
+    [Fact]
+    public void Build_MultiplePosterCandidates_WrapsThemAllAsThumbsLikeFanart()
+    {
+        // Root-caused live (2026-09-12): before this, only the single top poster candidate
+        // ever reached the NFO, so Kodi's own "Choose Art" picker had nothing else to offer --
+        // confirmed on "Spider-Man: Brand New Day", whose picker showed only a blank slot and
+        // an auto-generated video still despite Chronicle already having real posters resolved.
+        var data = MinimalMovie() with
+        {
+            Artwork = new Dictionary<string, List<ResolvedArtworkCandidate>>
+            {
+                ["poster"] =
+                [
+                    new ResolvedArtworkCandidate("https://example.com/poster1.jpg", "tmdb"),
+                    new ResolvedArtworkCandidate("https://example.com/poster2.jpg", "fanarttv"),
+                ],
+            },
+        };
+
+        var root = Parse(KodiNfoBuilder.Build(new MovieSidecarBuildRequest(data)));
+
+        var posterEl = root.Element("art")!.Element("poster")!;
+        posterEl.Elements("thumb").Select(e => e.Value).Should()
+            .Equal("https://example.com/poster1.jpg", "https://example.com/poster2.jpg");
+    }
+
+    [Fact]
+    public void Build_MultipleClearlogoCandidates_AlsoWrapsAsThumbs()
+    {
+        // Confirms the multi-candidate wrapping isn't special-cased to poster -- every
+        // single-value art slot (clearlogo, banner, clearart, discart, characterart) gets the
+        // same treatment when Chronicle has more than one candidate for it.
+        var data = MinimalMovie() with
+        {
+            Artwork = new Dictionary<string, List<ResolvedArtworkCandidate>>
+            {
+                ["clearlogo"] =
+                [
+                    new ResolvedArtworkCandidate("https://example.com/logo1.png", "fanarttv"),
+                    new ResolvedArtworkCandidate("https://example.com/logo2.png", "fanarttv"),
+                ],
+            },
+        };
+
+        var root = Parse(KodiNfoBuilder.Build(new MovieSidecarBuildRequest(data)));
+
+        var clearlogoEl = root.Element("art")!.Element("clearlogo")!;
+        clearlogoEl.Elements("thumb").Select(e => e.Value).Should()
+            .Equal("https://example.com/logo1.png", "https://example.com/logo2.png");
+    }
+
     private static ResolvedMovieData MinimalMovie() => new(
         Title: "Minimal Movie", Overview: null, Tagline: null, Year: 2020, Premiered: null,
         Mpaa: null, Country: null, Studio: null, RuntimeMinutes: null, Genres: null, Cast: null,
