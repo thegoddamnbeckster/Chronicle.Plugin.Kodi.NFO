@@ -5,17 +5,16 @@ using Chronicle.Plugins.Models;
 namespace Chronicle.Plugin.Kodi.NFO;
 
 /// <summary>
-/// <see cref="ISidecarFormatPlugin"/> for Kodi's own .nfo sidecar convention -- both directions.
-/// Read side (KodiNfoReader) is a straight relocation of Chronicle core's former
-/// NfoSignalExtractor/NfoDetailParser (Chronicle.Services.Scan), same behavior. Write side
-/// (KodiNfoBuilder) is a C# port of Chronicle_Scraper's lib/nfo_writer.py/tv_nfo_writer.py/
-/// nfo_common.py -- everything those two Kodi addons used to build from Chronicle's own
-/// resolved data, now built once, here, instead of twice in Python.
+/// <see cref="ISidecarFormatPlugin"/> for Kodi's own .nfo sidecar convention. Read side
+/// (KodiNfoReader) is a straight relocation of Chronicle core's former
+/// NfoSignalExtractor/NfoDetailParser (Chronicle.Services.Scan), same behavior.
 ///
-/// See docs/plans/2026-09-02-kodi-nfo-plugin-design.md in the main Chronicle repo for the
-/// full design and the one thing that could NOT move here: <fileinfo><streamdetails> (Kodi's
-/// own file-probe data), which the caller still supplies via
-/// SidecarBuildRequest.ExtraFields.
+/// This plugin originally also had a write side (KodiNfoBuilder, a C# port of
+/// Chronicle_Scraper's lib/nfo_writer.py/tv_nfo_writer.py/nfo_common.py) -- removed 2026-09-13
+/// along with ISidecarFormatPlugin.BuildAsync and the server-side NFO generation system in the
+/// main Chronicle repo that was its only caller. See docs/plans/2026-09-02-kodi-nfo-plugin-
+/// design.md in the main Chronicle repo for the original design, and git history here if the
+/// write side is ever needed again.
 /// </summary>
 public sealed class KodiNfoPlugin : ISidecarFormatPlugin
 {
@@ -23,7 +22,7 @@ public sealed class KodiNfoPlugin : ISidecarFormatPlugin
 
     public string PluginId => "chronicle.plugin.kodi.nfo";
     public string Name     => "Kodi NFO";
-    public string Version  => "1.0.0";
+    public string Version  => "1.1.0";
     public string Author   => "Chronicle Contributors";
 
     // ── Capability declarations ───────────────────────────────────────────────
@@ -58,9 +57,4 @@ public sealed class KodiNfoPlugin : ISidecarFormatPlugin
 
     public JsonElement? ExtractCuratedFields(string sidecarPath) =>
         KodiNfoReader.ExtractCuratedFields(sidecarPath);
-
-    // ── Write side ────────────────────────────────────────────────────────────
-
-    public Task<byte[]> BuildAsync(SidecarBuildRequest request, CancellationToken ct = default) =>
-        Task.FromResult(KodiNfoBuilder.Build(request));
 }
